@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %} Object Detection & Tracking{% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+
+  <!-- Google Font: Source Sans Pro -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="/static/assets/plugins/fontawesome-free/css/all.min.css">
+  <!-- Theme style -->
+{#  <link rel="stylesheet" href="/static/assets/css/adminlte.min.css">#}
+    <!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<!-- Bootstrap JS (for carousel functionality) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- overlayScrollbars -->
+{% endblock stylesheets %}
+
+{% block content %}
+    <style>
+
+body {
+    background-color: #1c1c1e;
+    color: white;
+.container {
+            text-align: center;
+            padding-top: 50px;
+        }
+.upload-box {
+  border: 2px dashed #6c757d;
+  border-radius: 20px;
+  padding: 50px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background-color 0.3s ease ;
+}
+.btn-custom {
+            padding-left: 5px;
+    padding-right: 5px;
+    background-color: #6f42c1;
+            color: white;
+            border: none;
+        }
+.btn-custom:hover {
+    background-color: #5a32a3;
+        }
+
+.upload-box:hover {
+  background-color: #2c2c2e;
+}
+
+.upload-box img {
+  margin-bottom: 10px;
+    margin-top: auto;
+    padding: 10px;
+}
+
+.drag-area {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+    position: relative;
+}
+.preview-container {
+      margin-top: 30px;
+      display: none; /* Hidden by default */
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+.preview-container img, .preview-container video {
+      max-width: 100%;
+      max-height: 500px;
+      object-fit: contain;
+    }
+.preview-container p {
+      font-size: 1.2rem;
+      margin-top: 10px;
+    }
+.sample-data img {
+            border: 2px solid transparent;
+            border-radius: 10px;
+            transition: border-color 0.3s ease-in-out;
+        }
+        .sample-data img:hover {
+            border-color: #6c757d;
+        }
+.drag-area {
+    border: 2px dashed #6c757d;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px auto;
+
+.draggable-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: grab;
+        }}
+.purple-glow {
+    color: #39ff14; /* Purple color */
+    text-shadow: 0 0 10px #6f42c1, 0 0 10px #6f42c1, 0 0 15px #6f42c1;
+  }
+</style>
+
+
+    <div class="container">
+        <h1 class="pb-4 text-wrap">Object Detection and Tracking</h1>
+   <form class="form-signin " method=post enctype=multipart/form-data name="form1">
+  <!-- Upload box -->
+  <div class="upload-box text-center drag-area" id="dropZone"
+       onclick="document.getElementById('fileInput').click();"
+       ondragover="handleDragOver(event)"
+       ondrop="handleDrop(event)">
+    <!-- Hidden file input -->
+    <input type="file" id="fileInput" name="file" class="form-control-file" style="display: none;"
+           onchange="handleFileSelect(event)">
+    <!-- Upload icon -->
+    <img src="https://www.pikpng.com/pngl/b/308-3085369_hr-cloud-upload-icon-clipart.png"
+         alt="Upload Img"
+         class="img-fluid"
+         style="width: 120px; object-fit: cover; display: block; margin: auto;">
+    <!-- Drag-and-drop text -->
+    <p id="uploadText" style="font-size: 1.50rem; color: gray;">Drag & Drop Image or Video Here</p>
+    <p style="font-size: 1.50rem; color: gray;">or <a style="font-size: 1.50rem; color: mediumpurple" href="#">Browse Image</a></p>
+  </div>
+              <div class="preview-container" id="previewContainer">
+    <div id="uploadedContent"></div>
+    <p id="previewText"></p>
+  </div>
+       <div id="preview" class="mt-3">
+    <p style="font-size: 1.07rem; color: gray;">No image selected</p>
+
+</div>
+       <br>
+   <h5>Or try clicking on sample data</h5>
+       <div class="draggable-image sample-data d-flex justify-content-center gap-3 mt-3" id="sampleImages" style="color: gray;" onclick="handleImageClick(event)">
+  <!-- Images will be dynamically added here -->
+</div>
+{#       <div>#}
+{#               <button class="btn btn-custom px-5 py-2" onclick="shuffleImages()">Get Sample Images</button>#}
+{#       </div>#}
+       <br>
+        <button id="uploadButton" class="btn btn-custom px-5 py-2 rounded-pill" type="submit">Upload</button>
+  <p class="purple-glow mt-5 mb-3 text-center">Built using Pytorch & Flask</p>
+    </form>
+    </div>
+    </div>
+
+
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+    <script>
+// When the file is selected via the input element
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        showPreview(file);
+        {#alert(`File selected: ${file.name}`);#}
+        // You can further process the file or upload it here
+    }
+}
+
+// Handle file drop
+function handleDrop(event) {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file) {
+        showPreview(file);
+        {#alert(`File dropped: ${file.name}`);#}
+        // Assign the dropped file to the hidden input (optional, if needed)
+        document.getElementById('fileInput').files = event.dataTransfer.files;
+        // You can further process the file or upload it here
+    }
+}
+
+function showPreview(file) {
+      const previewImage = document.getElementById('previewImage');
+      const uploadText = document.getElementById('uploadText');
+      const previewContainer = document.getElementById('previewContainer');
+      const uploadedContent = document.getElementById('uploadedContent');
+      const previewText = document.getElementById('previewText');
+
+      // Reset the content of the preview container
+      uploadedContent.innerHTML = '';
+      previewText.innerHTML = '';
+
+      // If it's an image file
+      if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+              previewImage.src = e.target.result; // Update preview image in the upload box
+              previewImage.style.width = '100%'; // Optional: Adjust size
+              uploadText.style.display = 'none'; // Hide the upload text
+
+              // Show the uploaded image in the preview container
+              const imgElement = document.createElement('img');
+              imgElement.src = e.target.result;
+              uploadedContent.appendChild(imgElement);
+              previewContainer.style.display = 'flex'; // Make the preview container visible
+              previewText.innerHTML = 'Image Preview:';
+          };
+          reader.readAsDataURL(file);
+      }
+      // If it's a video file
+      else if (file.type.startsWith('video/')) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+              previewImage.src = 'https://www.pikpng.com/pngl/b/308-3085369_hr-cloud-upload-icon-clipart.png'; // Placeholder icon
+              previewImage.style.width = '120px'; // Reset to original size
+              uploadText.style.display = 'none'; // Hide the upload text
+
+              // Show the uploaded video in the preview container
+              const videoElement = document.createElement('video');
+              videoElement.src = e.target.result;
+              videoElement.controls = true;
+              uploadedContent.appendChild(videoElement);
+              previewContainer.style.display = 'flex'; // Make the preview container visible
+              previewText.innerHTML = 'Video Preview:';
+          };
+          reader.readAsDataURL(file);
+      } else {
+          alert('Please upload a valid image or video file.');
+      }
+  }
+
+  const images = [
+    { src: "/static/assets/sample1.jpg", alt: "Sample 1", caption: "Sample 1" },
+    { src: "/static/assets/sample2.jpg", alt: "Sample 2", caption: "Sample 2" },
+    { src: "/static/assets/sample3.jpg", alt: "Sample 3", caption: "Sample 3" },
+    { src: "/static/assets/sample4.jpg", alt: "Sample 4", caption: "Sample 4" },
+    { src: "/static/assets/sample5.jpg", alt: "Sample 5", caption: "Sample 5" },
+      { src: "/static/assets/sample6.jpg", alt: "Sample 4", caption: "Sample 6" },
+      { src: "/static/assets/sample7.jpg", alt: "Sample 4", caption: "Sample 7" },
+      { src: "/static/assets/sample8.jpg", alt: "Sample 4", caption: "Sample 8" },
+      { src: "/static/assets/sample9.jpg", alt: "Sample 4", caption: "Sample 9" },
+      { src: "/static/assets/sample10.jpg", alt: "Sample 4", caption: "Sample 10" },
+      { src: "/static/assets/sample11.jpg", alt: "Sample 4", caption: "Sample 11" },
+      { src: "/static/assets/sample12.jpg", alt: "Sample 4", caption: "Sample 12" },
+      { src: "/static/assets/sample13.jpg", alt: "Sample 4", caption: "Sample 13" },
+  ];
+  // Function to shuffle the array
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+  // Shuffle the images
+  const shuffledImages = shuffleArray(images);
+  // Select the container
+  const sampleImagesContainer = document.getElementById("sampleImages");
+  // Add the shuffled images to the container
+  shuffledImages.slice(0, 3).forEach((image) => {
+    const imageDiv = document.createElement("div");
+    imageDiv.innerHTML = `
+      <img src="${image.src}" alt="${image.alt}" class="img-fluid draggable-image" draggable="true"
+           style="width: 160px; height: 160px; object-fit: cover; border: 2px dashed #6c757d; border-radius: 10px;">
+      <p class="text-center">${image.caption}</p>
+    `;
+    sampleImagesContainer.appendChild(imageDiv);
+  });
+{#INCOMPLETE FUNCTION#}
+{#  function shuffleImages() {#}
+{#    const images = [#}
+{#        { id: "image1", src:  "/static/assets/sample1.jpg "},#}
+{#        { id: "image2", src:  "/static/assets/sample2.jpg "},#}
+{#        { id: "image3", src:  "/static/assets/sample3.jpg "},#}
+{#    ];#}
+{##}
+{#    // Shuffle the images array#}
+{#    for (let i = images.length - 1; i > 0; i--) {#}
+{#        const j = Math.floor(Math.random() * (i + 1));#}
+{#        [images[i], images[j]] = [images[j], images[i]];#}
+{#    }#}
+{##}
+{#    // Update the src attributes of the images#}
+{#    images.forEach((image, index) => {#}
+{#        document.getElementById(image.id).src = image.src;#}
+{#    });#}
+{#}#}
+
+function handleImageClick(event) {
+    const imgSrc = event.target.src;
+    handleFileSelection(imgSrc);
+}
+
+  // Handle Drag Over Event
+function handleDragOver(event) {
+  event.preventDefault(); // Prevent the default behavior
+  const dropZone = document.getElementById("dropZone");
+  dropZone.style.borderColor = "blue"; // Highlight drop area
+}
+
+// Handle Drag Leave Event (optional)
+function handleDragLeave(event) {
+        event.preventDefault();
+  const dropZone = document.getElementById("dropZone");
+  dropZone.style.borderColor = "gray"; // Reset border
+}
+
+// Handle Drop Event
+function handleDrop(event) {
+  event.preventDefault(); // Prevent file from opening in browser
+  event.stopPropagation();
+  const files = event.dataTransfer.files; // Get the files from drop event
+  if (files.length > 0) {
+    handleFile(files[0]); // Process the first file
+  }
+}
+
+// Handle File Selection
+function handleFileSelect(event) {
+  const files = event.target.files; // Get files from input element
+  if (files.length > 0) {
+    handleFile(files[0]); // Process the first file
+  }
+}
+
+// Process File
+function handleFile(file) {
+    if (file && file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      // Display the image preview
+      const preview = document.getElementById("preview");
+      preview.innerHTML = `<img src="${e.target.result}" alt="Uploaded Image" class="img-fluid" style="max-height: 200px;">`;
+    };
+    reader.readAsDataURL(file); // Convert file to base64 data URL
+  } else {
+    alert("Please upload a valid image file.");
+  }
+}
+
+function handleFileSelection(imgSrc) {
+    const preview = document.getElementById("preview");
+    preview.innerHTML = `<img src="${imgSrc}" alt="Selected Image" class="img-fluid" style="max-height: 200px;">`;
+}
+
+</script>
+
+{% endblock javascripts %}
