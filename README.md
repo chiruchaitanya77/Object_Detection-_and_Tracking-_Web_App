@@ -21,6 +21,3 @@ Once you're in the directory containing your webapp.py file, run the following c
 <b>python webapp.py </b>
 
 Following these steps should launch your Flask web application, allowing you to access it through a web browser or any other HTTP client.
-
-
-![home](https://github.com/chiruchaitanya77/Object_Detection_and_Tracking_Web_App/pull/1/conflicts)
