@@ -189,7 +189,7 @@ def webcam_feed():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Flask app exposing yolov9 models")
-    parser.add_argument("--port", default=5000, type=int, help="port number")
+    parser.add_argument("--port", default=5050, type=int, help="port number")
     args = parser.parse_args()
     model = YOLO('yolov9c.pt')
-    app.run()
+    app.run(port=5050)
